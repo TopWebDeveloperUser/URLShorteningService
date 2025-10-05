@@ -1,7 +1,12 @@
-﻿namespace ShortUrl.Common.Utility.Interfaces
+﻿using Mapster;
+
+namespace ShortUrl.Common.Utility.Interfaces
 {
+    /// <summary>
+    /// For Mapster
+    /// </summary>
     public interface IMappingProfile
     {
-        void Configure();
+        void Configure(TypeAdapterConfig globalConfig);
     }
 }

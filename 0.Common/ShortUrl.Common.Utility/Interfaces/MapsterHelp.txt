@@ -1,0 +1,54 @@
+﻿
+// For Example
+public class UserController : ControllerBase
+{
+    private readonly IMappingService _mapper;
+
+    public UserController(IMappingService mapper)
+    {
+        _mapper = mapper;
+    }
+
+    [HttpPost]
+    public IActionResult CreateUser(UserCreateDto createDto)
+    {
+        // روش ۱: مستقیم با Expression
+        var user = createDto.MapWith<UserCreateDto, UserEntity>(_mapper, config =>
+        {
+            config.Ignore(dest => dest.Id)
+                  .Ignore(dest => dest.InternalId)
+                  .Map(dest => dest.CreatedAt, src => DateTime.UtcNow)
+                  .Map(dest => dest.FullName, src => $"{src.FirstName} {src.LastName}")
+                  .MaxDepth(2);
+        });
+
+        // روش ۲: با نام خصوصیت
+        var user2 = createDto.MapWith<UserCreateDto, UserEntity>(_mapper, config =>
+        {
+            config.Ignore("Id", "InternalId")
+                  .Map("CreatedAt", (UserCreateDto src) => DateTime.UtcNow)
+                  .Map("FullName", (UserCreateDto src) => $"{src.FirstName} {src.LastName}")
+                  .MaxDepth(2);
+        });
+
+        _userRepository.Add(user);
+        return Ok(user.MapTo<UserDto>(_mapper));
+    }
+
+    [HttpGet]
+    public IActionResult GetUsers()
+    {
+        var users = _userRepository.GetAll();
+        
+        // Mapping با تنظیمات خاص
+        var customDtos = users.MapToListWith<UserEntity, UserCustomDto>(_mapper, config =>
+        {
+            config.Ignore(dest => dest.PasswordHash)
+                  .Ignore("SensitiveData")
+                  .Map(dest => dest.DisplayName, src => $"{src.FirstName} {src.LastName} ({src.Email})")
+                  .Map("Status", (UserEntity src) => src.IsActive ? "Active" : "Inactive");
+        });
+
+        return Ok(customDtos);
+    }
+}
