@@ -1,7 +1,7 @@
 ﻿using Mapster;
-using ShortUrl.Common.Utility.Interfaces;
+using ShortUrl.Common.Utility.Mapster.Interfaces;
 
-namespace ShortUrl.Common.Utility.Profiles
+namespace ShortUrl.Common.Utility.Mapster.Profiles
 {
     /// <summary>
     /// For Mapster

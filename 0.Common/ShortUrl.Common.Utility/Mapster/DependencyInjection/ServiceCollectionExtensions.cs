@@ -1,9 +1,9 @@
 ﻿using Mapster;
 using Microsoft.Extensions.DependencyInjection;
-using ShortUrl.Common.Utility.Interfaces;
-using ShortUrl.Common.Utility.Services;
+using ShortUrl.Common.Utility.Mapster.Interfaces;
+using ShortUrl.Common.Utility.Mapster.Services;
 
-namespace ShortUrl.Common.Utility.DependencyInjection
+namespace ShortUrl.Common.Utility.Mapster.DependencyInjection
 {
     /// <summary>
     /// For Mapster

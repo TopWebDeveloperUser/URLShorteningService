@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
 using Mapster;
 
-namespace ShortUrl.Common.Utility.Adapters
+namespace ShortUrl.Common.Utility.Mapster.Adapters
 {
     // کلاس کمکی برای پیکربندی
     /// <summary>

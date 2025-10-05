@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
-using ShortUrl.Common.Utility.Adapters;
+using ShortUrl.Common.Utility.Mapster.Adapters;
 
-namespace ShortUrl.Common.Utility.Helpers
+namespace ShortUrl.Common.Utility.Mapster.Helpers
 {
     /// <summary>
     /// For Mapster
