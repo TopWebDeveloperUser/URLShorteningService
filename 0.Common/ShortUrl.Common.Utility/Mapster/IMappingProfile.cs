@@ -1,6 +1,6 @@
 ﻿using Mapster;
 
-namespace ShortUrl.Common.Utility.Mapster.Interfaces
+namespace ShortUrl.Common.Utility.Mapster
 {
     /// <summary>
     /// For Mapster

@@ -1,0 +1,83 @@
+﻿<!-- در پروژه اصلی -->
+<ItemGroup>
+  <ProjectReference Include="..\Common.Caching\Common.Caching.csproj" />
+</ItemGroup>
+//*********************************************************************
+
+var builder = WebApplication.CreateBuilder(args);
+
+// اضافه کردن سرویس کش
+builder.Services.AddCustomCache(builder.Configuration);
+
+// سایر سرویس‌ها...
+//*********************************************************************
+
+{
+  "CacheSettings": {
+    "Type": "Redis",
+    "RedisConnectionString": "localhost:6379,abortConnect=false",
+    "DefaultExpiryMinutes": 30
+  }
+}
+
+
+//*********************************************************************
+public class CacheManager
+{
+    private readonly ICacheService _cacheService;
+
+    public CacheManager(ICacheService cacheService)
+    {
+        _cacheService = cacheService;
+    }
+
+    // مثال استفاده از ClearAsync
+    public async Task ResetCacheAsync()
+    {
+        await _cacheService.ClearAsync();
+        Console.WriteLine("All cache cleared successfully");
+    }
+
+    // مثال: پاک کردن کش بعد از عملیات خاص
+    public async Task RefreshAllDataAsync()
+    {
+        // پاک کردن تمام کش
+        await _cacheService.ClearAsync();
+        
+        // بارگذاری مجدد داده‌ها
+        await LoadInitialDataAsync();
+    }
+
+    private async Task LoadInitialDataAsync()
+    {
+        // بارگذاری داده‌های اولیه
+    }
+}
+
+//*********************************************************************
+[ApiController]
+[Route("api/[controller]")]
+public class CacheController : ControllerBase
+{
+    private readonly ICacheService _cacheService;
+
+    public CacheController(ICacheService cacheService)
+    {
+        _cacheService = cacheService;
+    }
+
+    [HttpPost("clear")]
+    public async Task<IActionResult> ClearCache()
+    {
+        await _cacheService.ClearAsync();
+        return Ok(new { message = "Cache cleared successfully" });
+    }
+
+    [HttpPost("clear/{pattern}")]
+    public async Task<IActionResult> ClearByPattern(string pattern)
+    {
+        // برای پاک کردن کلیدهای خاص بر اساس الگو
+        // این نیاز به پیاده‌سازی اضافه دارد
+        return Ok(new { message = $"Cache keys with pattern '{pattern}' cleared" });
+    }
+}
