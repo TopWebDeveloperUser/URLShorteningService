@@ -1,0 +1,32 @@
+﻿{
+  "Serilog": {
+    "LogLevel": "Information",
+    "WriteToConsole": true,
+    "WriteToFile": true,
+    "WriteToDatabase": true,
+    "FilePath": "logs/myapp-.txt",
+    "UseJsonFormat": false,
+    "ApplicationName": "MyWebApi",
+    "Database": {
+      "ConnectionString": "Server=.;Database=LogsDb;Trusted_Connection=true;",
+      "TableName": "ApplicationLogs",
+      "Schema": "logging",
+      "AutoCreateTable": true,
+      "StoreLogLevel": true,
+      "StoreTimestamp": true,
+      "StoreMessage": true,
+      "StoreException": true,
+      "StoreProperties": true
+    }
+  }
+}
+
+
+// در Program.cs
+builder.Host.UseCommonSerilog(settings =>
+{
+    settings.ApplicationName = "MyWebApi";
+    settings.WriteToDatabase = true;
+    settings.Database.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    settings.Database.TableName = "AppLogs";
+});
