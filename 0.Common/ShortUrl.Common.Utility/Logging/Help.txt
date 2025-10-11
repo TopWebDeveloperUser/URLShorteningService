@@ -26,7 +26,94 @@
 builder.Host.UseCommonSerilog(settings =>
 {
     settings.ApplicationName = "MyWebApi";
+    settings.LogLevel = "Information";
+    settings.WriteToConsole = true;
+    settings.WriteToFile = true;
     settings.WriteToDatabase = true;
+    settings.FilePath = "logs/webapi-.txt";
+    settings.UseJsonFormat = false;
+    
+    // تنظیمات دیتابیس
     settings.Database.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    settings.Database.TableName = "AppLogs";
+    settings.Database.TableName = "ApiLogs";
+    settings.Database.AutoCreateTable = true;
 });
+
+// استفاده از میدلور برای لاگ‌گیری درخواست‌ها
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    
+    using (logger.BeginTimedOperation("HTTP Request"))
+    {
+        await next();
+    }
+    
+    logger.LogInformation("Request {Method} {Path} completed with {StatusCode}",
+        context.Request.Method, context.Request.Path, context.Response.StatusCode);
+});
+
+
+
+[ApiController]
+[Route("api/[controller]")]
+public class UsersController : ControllerBase
+{
+    private readonly ILogger<UsersController> _logger;
+    private readonly UserService _userService;
+
+    public UsersController(ILogger<UsersController> logger, UserService userService)
+    {
+        _logger = logger;
+        _userService = userService;
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<User>> GetUser(int id)
+    {
+        _logger.LogInformation("Getting user with ID: {UserId}", id);
+        
+        try
+        {
+            var user = await _userService.GetUserAsync(id);
+            
+            if (user == null)
+            {
+                _logger.LogWarning("User with ID {UserId} not found", id);
+                return NotFound();
+            }
+            
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user with ID {UserId}", id);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> CreateUser([FromBody] User user)
+    {
+        using (_logger.BeginTimedOperation("CreateUser"))
+        {
+            try
+            {
+                // منطق ایجاد کاربر
+                _logger.LogInformation("Creating new user: {UserName}", user.Name);
+                
+                // شبیه‌سازی عملیات
+                await Task.Delay(100);
+                
+                _logger.LogBusinessEvent("UserCreated", "admin", user);
+                
+                return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating user: {UserName}", user.Name);
+                return StatusCode(500, "Internal server error");
+            }
+        }
+    }
+}
