@@ -1,0 +1,95 @@
+﻿dotnet add package Dapper
+dotnet add package Microsoft.Extensions.Configuration
+dotnet add package Microsoft.Extensions.DependencyInjection
+dotnet add package System.Data.SqlClient
+
+===========================================================================
+
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=.;Database=MainDB;Trusted_Connection=true;",
+    "LoggingConnection": "Server=.;Database=LogDB;Trusted_Connection=true;",
+    "ReportingConnection": "Server=.;Database=ReportDB;Trusted_Connection=true;"
+  }
+}
+
+
+var builder = WebApplication.CreateBuilder(args);
+
+// روش ۱: ثبت ساده با اتصال پیش‌فرض
+builder.Services.AddCommonDapper(builder.Configuration);
+
+// روش ۲: ثبت با چندین اتصال
+builder.Services.AddCommonDapperWithMultipleConnections(
+    builder.Configuration, 
+    "DefaultConnection", 
+    "LoggingConnection", 
+    "ReportingConnection");
+
+// روش ۳: ثبت ریپازیتوری‌های خاص
+builder.Services.AddNamedRepository<LogEntry>("LoggingConnection", "Logs");
+builder.Services.AddNamedRepository<Report>("ReportingConnection", "Reports");
+
+var app = builder.Build();
+
+
+using Common.Dapper.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/[controller]")]
+public class UsersController : ControllerBase
+{
+    private readonly IUnitOfWork _mainUoW;
+    private readonly INamedRepository<LogEntry> _logRepository;
+    private readonly Func<string, IUnitOfWork> _uowFactory;
+
+    public UsersController(
+        IUnitOfWork mainUoW,
+        INamedRepository<LogEntry> logRepository,
+        Func<string, IUnitOfWork> uowFactory)
+    {
+        _mainUoW = mainUoW;
+        _logRepository = logRepository;
+        _uowFactory = uowFactory;
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateUser(User user)
+    {
+        try
+        {
+            await _mainUoW.BeginTransactionAsync();
+
+            // کار با دیتابیس اصلی
+            var userRepo = _mainUoW.GetRepository<User>();
+            var userId = await userRepo.InsertAsync(user);
+
+            // کار با دیتابیس لاگ
+            await _logRepository.InsertAsync(new LogEntry
+            {
+                Message = $"User {user.Name} created with ID {userId}",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _mainUoW.CommitAsync();
+            return Ok(new { UserId = userId });
+        }
+        catch
+        {
+            await _mainUoW.RollbackAsync();
+            throw;
+        }
+    }
+
+    [HttpGet("reports")]
+    public async Task<IActionResult> GetReports()
+    {
+        // استفاده از فکتوری برای اتصال پویا
+        var reportUoW = _uowFactory("ReportingConnection");
+        var reportRepo = reportUoW.GetRepository<Report>();
+        
+        var reports = await reportRepo.GetAllAsync();
+        return Ok(reports);
+    }
+}
